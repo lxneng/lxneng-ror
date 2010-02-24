@@ -1,0 +1,87 @@
+# ----------------------------------#
+# send email in rails using gmail   #
+#-----------------------------------#
+rails exception_notification_example ; cd exception_notification_example/
+script/plugin install git://github.com/thincloud/action_mailer_tls.git
+script/plugin install git://github.com/jeremyevans/exception_notification.git
+
+vim config/initializers/mailer.rb
+require 'smtp_tls'
+ActionMailer::Base.delivery_method = :smtp
+ActionMailer::Base.raise_delivery_errors = true
+ActionMailer::Base.perform_deliveries = true
+ActionMailer::Base.smtp_settings = { 
+   :address  => "smtp.gmail.com", 
+   :port  => 587,
+   :domain => 'www.lxneng.com', 
+   :authentication  => :plain, 
+   :user_name  => "lxneng@gmail.com", 
+   :password  => "xxxxxxxxxx"
+}
+
+script/generate mailer HelloMail
+
+vim app/models/hello_mail.rb
+class HelloMail < ActionMailer::Base
+  def welcome(recipient)
+    recipients  recipient
+	from        "lxneng@gmail.com"
+	subject     "Hi #{recipient}"
+	body        "body #{recipient}"
+  end
+end
+
+ruby script/generate scaffold Contact name:string
+
+vim app/controllers/contacts_controller.rb
+add  "HelloMail.deliver_welcome("lxneng@gmail.com")" to index action
+
+rake db:migrate
+
+ruby script/server
+open http://localhost:3000/contacts
+
+oops!!  errors in ruby 1.87, because smtp library in ruby 1.8.7 have changed
+wrong number of arguments (3 for 2)
+
+vim vendor/plugins/action_mailer_tls/lib/smtp_tls.rb
+delete authtype parameter from vendor/plugin/action_mailer_optional_tls/lib/smtp_tls.rb and change line 8
+
+ruby script/server
+http://localhost:3000/contacts
+and go to gmail.com check email
+
+# ---------------------------------------#
+# exception_notification configuration   #
+#----------------------------------------#
+
+vim config/environment.rb and  add 
+ExceptionNotifier.sender_address = %("Application Error" <lxneng@gmail.com>)
+ExceptionNotifier.exception_recipients = %w(lxneng@gmail.com)
+
+vim app/controllers/application_controller.rb and add
+include ExceptionNotifiable
+local_addresses.clear # test at localhost
+
+rake db:create RAILS_ENV=production
+rake db:migrate RAILS_ENV=production
+
+ruby script/server -e production
+
+exception_notification 默认只有500才发邮件
+vim vendor/plugins/exception_notification/lib/exception_notifiable.rb
+修改成404也发邮件
+
+
+控制台出错
+Net::SMTPFatalError (555 5.5.2 Syntax error. 22sm158197pzk.6。。。。。
+
+vim config/environment.rb
+改
+ExceptionNotifier.sender_address = %("Application Error" <lxneng@gmail.com>)
+为
+ExceptionNotifier.sender_address = %(lxneng@gmail.com)
+ruby script/server -e production
+curl -I http://localhost:3000/contacts/fjsdkfjskd
+
+这样就能收到邮件了

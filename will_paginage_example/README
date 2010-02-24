@@ -1,0 +1,67 @@
+Erics-MacBook:NetBeans_Workspace eric$ rails will_paginage_example; cd will_paginage_example
+
+Erics-MacBook:will_paginage_example eric$ script/plugin install git://github.com/mislav/will_paginate.git
+
+Erics-MacBook:will_paginage_example eric$ script/generate scaffold post title:string body:text
+
+
+Erics-MacBook:will_paginage_example eric$ vim db/migrate/20100222150759_create_posts.rb
+
+class CreatePosts < ActiveRecord::Migration
+  def self.up
+    create_table :posts do |t|
+      t.string :title
+      t.text :body
+
+      t.timestamps
+    end
+    (1..50).each do |num|
+      Post.create(:title => "title#{num}", :body => "body#{num}")
+    end
+  end
+
+  def self.down
+    drop_table :posts
+  end
+end
+
+Erics-MacBook:will_paginage_example eric$ rake db:migrate
+
+Erics-MacBook:will_paginage_example eric$ vim app/controllers/posts_controller.rb
+
+@posts = Post.paginate(:page => params[:page], :per_page => 5, :order => 'updated_at DESC')
+
+
+Erics-MacBook:will_paginage_example eric$ vim app/views/posts/index.html.erb
+<%= will_paginate @posts %>
+
+Erics-MacBook:will_paginage_example eric$ vim public/stylesheets/scaffold.css
+.pagination {
+  padding: 3px;
+  margin: 3px;
+}
+.pagination a {
+  padding: 2px 5px 2px 5px;
+  margin: 2px;
+  border: 1px solid #aaaadd;
+  text-decoration: none;
+  color: #000099;
+}
+.pagination a:hover, .pagination a:active {
+  border: 1px solid #000099;
+  color: #000;
+}
+.pagination span.current {
+  padding: 2px 5px 2px 5px;
+  margin: 2px;
+  border: 1px solid #000099;
+  font-weight: bold;
+  background-color: #000099;
+  color: #FFF;
+}
+.pagination span.disabled {
+  padding: 2px 5px 2px 5px;
+  margin: 2px;
+  border: 1px solid #eee;
+  color: #ddd;
+}
