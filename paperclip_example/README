@@ -1,0 +1,61 @@
+＝＝ 安装imagemagick
+$ brew install imagemagick ----- install imagemagick on mac os, if failed, pls use http://gist.github.com/313366  可能网络问题下载太慢，安装失败， 所以用macports安装sudo port install imagemagick
+
+＝＝ begin example
+$ rails paperclip_example
+$ cd paperclip_example/
+$ script/generate scaffold post title:string body:text
+$ script/plugin install git://github.com/thoughtbot/paperclip.git
+$ script/generate paperclip Post icon
+$ cat db/migrate/20100224111642_add_attachments_icon_to_post.rb
+
+class AddAttachmentsIconToPost < ActiveRecord::Migration
+  def self.up
+    add_column :posts, :icon_file_name, :string
+    add_column :posts, :icon_content_type, :string
+    add_column :posts, :icon_file_size, :integer
+    add_column :posts, :icon_updated_at, :datetime
+  end
+
+  def self.down
+    remove_column :posts, :icon_file_name
+    remove_column :posts, :icon_content_type
+    remove_column :posts, :icon_file_size
+    remove_column :posts, :icon_updated_at
+  end
+end
+
+$ rake db:migrate
+
+$ vim app/models/post.rb
+
+class Post < ActiveRecord::Base
+  has_attached_file :icon, :styles => { :medium => "100x100>", :thumb => "50x50>" },
+    :path => ":rails_root/public/images/:class/:attachment/:id/:style/:basename.:extension",
+    :url => "/images/:class/:attachment/:id/:style/:basename.:extension"
+end
+
+$ vim app/views/posts/new.html.erb
+<% form_for(@post, :html => { :multipart => true }) do |f| %>
+	...
+	<%= f.file_field :icon %>
+	...
+<% end %>
+
+$ app/views/posts/edit.html.erb
+<% form_for(@post, :html => { :multipart => true }) do |f| %>
+	...
+	<%= f.file_field :icon %><br />
+	<% unless @post.new_record? %>
+		<%= image_tag @post.icon.url(:thumb) %>
+	<% end %>
+	...
+<% end %>
+
+$ script/server 
+$ open http://localhost:3000/posts/new
+
+
+
+
+
