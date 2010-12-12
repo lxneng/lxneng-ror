@@ -5,5 +5,16 @@ class User < ActiveRecord::Base
          :recoverable, :rememberable, :trackable, :validatable
 
   # Setup accessible (or protected) attributes for your model
-  attr_accessible :email, :password, :password_confirmation, :remember_me
+  attr_accessible :email, :password, :password_confirmation, :remember_me, :login
+  
+  attr_accessor :login
+  
+  protected
+
+  def self.find_for_database_authentication(conditions)
+    value = conditions[authentication_keys.first]
+    where(["username = :value OR email = :value", { :value => value }]).first
+  end
+  
+  
 end
